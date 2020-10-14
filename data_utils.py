@@ -10,7 +10,7 @@ from text import text_to_sequence
 
 class TextMelLoader(torch.utils.data.Dataset):
     """
-        1) loads audio,text pairs
+        1) loads audio,text,speaker_id tuples
         2) normalizes text and converts them to sequences of one-hot vectors
         3) computes mel-spectrograms from audio files.
     """
@@ -20,6 +20,7 @@ class TextMelLoader(torch.utils.data.Dataset):
         self.max_wav_value = hparams.max_wav_value
         self.sampling_rate = hparams.sampling_rate
         self.load_mel_from_disk = hparams.load_mel_from_disk
+        self.n_speakers = hparams.n_speakers
         self.stft = layers.TacotronSTFT(
             hparams.filter_length, hparams.hop_length, hparams.win_length,
             hparams.n_mel_channels, hparams.sampling_rate, hparams.mel_fmin,
@@ -29,10 +30,17 @@ class TextMelLoader(torch.utils.data.Dataset):
 
     def get_mel_text_pair(self, audiopath_and_text):
         # separate filename and text
-        audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
+        speaker_id = None
+        if self.n_speakers > 1:
+            assert len(audiopath_and_text) == 3, (f'Input data length mismatch: given {len(audiopath_and_text)}, expected 3')
+            audiopath, text,speaker_id = audiopath_and_text[0], audiopath_and_text[1], audiopath_and_text[2]
+            speaker_id = self.onehot_speaker(speaker_id)            
+        else:
+            audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
+
         text = self.get_text(text)
         mel = self.get_mel(audiopath)
-        return (text, mel)
+        return (text, mel, speaker_id)
 
     def get_mel(self, filename):
         if not self.load_mel_from_disk:
@@ -52,6 +60,11 @@ class TextMelLoader(torch.utils.data.Dataset):
                     melspec.size(0), self.stft.n_mel_channels))
 
         return melspec
+
+    def onehot_speaker(self, id):
+        onehot = np.zeros(self.n_speakers,dtype=np.int8)
+        onehot[id - 1] = 1
+        return torch.from_numpy(onehot) 
 
     def get_text(self, text):
         text_norm = torch.IntTensor(text_to_sequence(text, self.text_cleaners))
@@ -74,7 +87,7 @@ class TextMelCollate():
         """Collate's training batch from normalized text and mel-spectrogram
         PARAMS
         ------
-        batch: [text_normalized, mel_normalized]
+        batch: [text_normalized, mel_normalized, speaker_id]
         """
         # Right zero-pad all one-hot text sequences to max input length
         input_lengths, ids_sorted_decreasing = torch.sort(
@@ -108,4 +121,4 @@ class TextMelCollate():
             output_lengths[i] = mel.size(1)
 
         return text_padded, input_lengths, mel_padded, gate_padded, \
-            output_lengths
+            output_lengths, batch[:,2]

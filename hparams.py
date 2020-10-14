@@ -47,6 +47,10 @@ def create_hparams(hparams_string=None, verbose=False):
         n_symbols=len(symbols),
         symbols_embedding_dim=512,
 
+        # Speakers
+        n_speakers = 1, # 1 disables multispeaker functionality
+        speakers_embedding_dim = 16,
+
         # Encoder parameters
         encoder_kernel_size=5,
         encoder_n_convolutions=3,
