@@ -125,4 +125,4 @@ class TextMelCollate():
             output_lengths[i] = mel.size(1)
 
         return text_padded, input_lengths, mel_padded, gate_padded, \
-            output_lengths, batch[:,2]
+            output_lengths, torch.LongTensor([x[2] for x in batch])

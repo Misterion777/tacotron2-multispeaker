@@ -511,7 +511,10 @@ class Tacotron2(nn.Module):
         return outputs
 
     def forward(self, inputs):
-        text_inputs, text_lengths, mels, max_len, output_lengths = inputs
+        if self.n_speakers > 1:
+          text_inputs, text_lengths, mels, max_len, output_lengths,speaker_ids = inputs
+        else:
+          text_inputs, text_lengths, mels, max_len, output_lengths = inputs
             
         text_lengths, output_lengths = text_lengths.data, output_lengths.data
 
@@ -520,9 +523,10 @@ class Tacotron2(nn.Module):
         encoder_outputs = self.encoder(embedded_inputs, text_lengths)
 
         if self.n_speakers > 1:            
-            speaker_ids = inputs[-1]
+            speaker_ids = speaker_ids.unsqueeze(1)  
             embedded_speakers = self.speakers_embedding(speaker_ids)
-            encoder_outputs = torch.cat((encoder_outputs, embedded_speakers),-1) 
+            embedded_speakers = embedded_speakers.expand(-1, max_len, -1)
+            encoder_outputs = torch.cat((encoder_outputs, embedded_speakers),-1)
 
         mel_outputs, gate_outputs, alignments = self.decoder(
             encoder_outputs, mels, memory_lengths=text_lengths)
