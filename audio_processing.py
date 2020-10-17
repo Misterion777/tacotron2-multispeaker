@@ -91,3 +91,9 @@ def dynamic_range_decompression(x, C=1):
     C: compression factor used to compress
     """
     return torch.exp(x) / C
+
+
+def normalize_volume(data):
+    data_ = data / np.abs(data).max() * 0.8
+    data_ = data_ * 32768.0
+    return data_
