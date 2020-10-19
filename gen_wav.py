@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import os
+from pathlib import Path
 import argparse
 
 from hparams import create_hparams
@@ -16,6 +16,7 @@ def infer(text, checkpoint_path, out_filename, speaker_id = None, griffin_iters=
 
     if speaker_id is not None:
         assert speaker_id in range(hparams.n_speakers) 
+        speaker_id = torch.LongTensor([speaker_id]).cuda()
 
     hparams.sampling_rate = 22050
 
@@ -42,9 +43,10 @@ def infer(text, checkpoint_path, out_filename, speaker_id = None, griffin_iters=
 
     audio = audio.squeeze()
     audio = audio.cpu().numpy()
-    audio_path = os.path.join('samples', f'{checkpoint_path.split("_")[1]}_{out_filename}')
+    audio_path = Path('samples')
+    audio_path.mkdir(exist_ok=True)
+    audio_path = audio_path.joinpath(f'{speaker_id[0]}_{out_filename}')
     write(audio_path, hparams.sampling_rate, audio)
-    print(audio_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates wav from text with Tacotron2 and Griffin-lim.')
