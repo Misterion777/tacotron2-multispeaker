@@ -398,6 +398,7 @@ class Decoder(nn.Module):
         decoder_input = self.get_go_frame(memory).unsqueeze(0)
         decoder_inputs = self.parse_decoder_inputs(decoder_inputs)
         decoder_inputs = torch.cat((decoder_input, decoder_inputs), dim=0)
+        
         decoder_inputs = self.prenet(decoder_inputs)
 
         self.initialize_decoder_states(
@@ -548,7 +549,9 @@ class Tacotron2(nn.Module):
         encoder_outputs = self.encoder.inference(embedded_inputs)
 
         if self.n_speakers > 1:
+            speaker_ids = speaker_ids.unsqueeze(1)  
             embedded_speakers = self.speakers_embedding(speaker_ids)
+            embedded_speakers = embedded_speakers.expand(-1, encoder_outputs.shape[1], -1)
             encoder_outputs = torch.cat((encoder_outputs, embedded_speakers),-1) 
         
         mel_outputs, gate_outputs, alignments = self.decoder.inference(

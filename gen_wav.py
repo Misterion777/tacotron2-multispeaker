@@ -11,8 +11,12 @@ from text import text_to_sequence
 from scipy.io.wavfile import write
 
 
-def infer(text, checkpoint_path, out_filename, griffin_iters=60):
+def infer(text, checkpoint_path, out_filename, speaker_id = None, griffin_iters=60):
     hparams = create_hparams()
+
+    if speaker_id is not None:
+        assert speaker_id in range(hparams.n_speakers) 
+
     hparams.sampling_rate = 22050
 
     model = load_model(hparams)
@@ -22,7 +26,8 @@ def infer(text, checkpoint_path, out_filename, griffin_iters=60):
     sequence = np.array(text_to_sequence(text, ['basic_cleaners']))[None, :]
     sequence = torch.autograd.Variable(torch.from_numpy(sequence)).cuda().long()
 
-    mel_outputs, mel_outputs_postnet, _, alignments = model.inference(sequence)
+    model_input = sequence if speaker_id is None else (sequence,speaker_id)
+    mel_outputs, mel_outputs_postnet, _, alignments = model.inference(model_input)
 
     taco_stft = TacotronSTFT(hparams.filter_length, hparams.hop_length, hparams.win_length, sampling_rate=hparams.sampling_rate)
 
@@ -45,6 +50,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates wav from text with Tacotron2 and Griffin-lim.')
     parser.add_argument('text', type=str, 
                         help='Text to generate wav from.')
+    parser.add_argument('speaker_id', type=int, default=None,
+                        help='Generated speech will be voiced by speaker with this id.')
     parser.add_argument('checkpoint_path', type=str, 
                         help='Checkpoint to trained Tacotron2.')
 
@@ -53,7 +60,7 @@ if __name__ == "__main__":
     
     args = vars(parser.parse_args())
 
-    infer(args['text'],args['checkpoint_path'],args['out_filename'])
+    infer(args['text'], args['speaker_id'], args['checkpoint_path'],args['out_filename'])
 
 #infer("outdir/checkpoint_3000", 60, "What a terrible tongue twister, what a terrible tongue twister, what a terrible tongue twister.", "sample.wav")
 # infer("outdir/checkpoint_200", 60, "Geralt of Rivia was a legendary witcher of the School of the Wolf active throughout the 13th century. He loved the sorceress Yennefer, considered the love of his life despite their tumultuous relationship, and became Ciri's adoptive father.", "sample.wav")
