@@ -35,9 +35,7 @@ class TextMelLoader(torch.utils.data.Dataset):
         speaker_id = None
         if self.n_speakers > 1:
             assert len(audiopath_and_text) == 3, (f'Input data length mismatch: given {len(audiopath_and_text)}, expected 3')
-            audiopath, text,speaker_id = audiopath_and_text[0], audiopath_and_text[1], int(audiopath_and_text[2])
-            speaker_id = torch.IntTensor(speaker_id)
-            # speaker_id = self.onehot_speaker(speaker_id)            
+            audiopath, text,speaker_id = audiopath_and_text[0], audiopath_and_text[1], int(audiopath_and_text[2])   
         else:
             audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
 
