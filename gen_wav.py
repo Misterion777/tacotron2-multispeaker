@@ -62,7 +62,7 @@ if __name__ == "__main__":
     
     args = vars(parser.parse_args())
 
-    infer(args['text'], args['speaker_id'], args['checkpoint_path'],args['out_filename'])
+    infer(args['text'], args['checkpoint_path'],args['out_filename'],args['speaker_id'])
 
 #infer("outdir/checkpoint_3000", 60, "What a terrible tongue twister, what a terrible tongue twister, what a terrible tongue twister.", "sample.wav")
 # infer("outdir/checkpoint_200", 60, "Geralt of Rivia was a legendary witcher of the School of the Wolf active throughout the 13th century. He loved the sorceress Yennefer, considered the love of his life despite their tumultuous relationship, and became Ciri's adoptive father.", "sample.wav")
